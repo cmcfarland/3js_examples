@@ -70,7 +70,10 @@
 			let playing = -1;
 			let audioContext;
 			let analyser;
-			let url = 'https://labs.phaser.io/assets/audio/Rossini - William Tell Overture (8 Bits Version)/left.ogg'
+			let spectrums;
+			//let url = 'https://labs.phaser.io/assets/audio/Rossini - William Tell Overture (8 Bits Version)/left.ogg'
+			//let url = 'https://nstmradio.mixlr.com/events/2787207'
+			let url = 'https://labs.phaser.io/assets/audio/Dafunk - Hardcore Power (We Believe In Goa - Remix).ogg'
 
 			const startButton = document.getElementById( 'startButton' );
 			startButton.addEventListener( 'click', init );
@@ -95,16 +98,21 @@
 
 				camera = new THREE.Camera();
 
-				audioContext = new (window.AudioContext || window.webkitAudioContext)();
-				analyser = audioContext.createAnalyser()
-				const fftSize = 128;
+				// 
 
 				const listener = new THREE.AudioListener();
 
+				// original code: 
 				//const audio = new THREE.Audio( listener );
-				//analyser = new THREE.AudioAnalyser( audio, fftSize );
 				// const file = './sounds/376737_Skullbeatz___Bad_Cat_Maste.mp3';
 
+				// winner-joiner code:
+				audioContext = new (window.AudioContext || window.webkitAudioContext)();
+				source = audioContext.createBufferSource();
+				analyser = audioContext.createAnalyser()
+				const fftSize = 128;
+				spectrums = new Uint8Array(fftSize);
+				
 				if (/(iPad|iPhone|iPod)/g.test( navigator.userAgent ) ) {
 
 					// const loader = new THREE.AudioLoader();
@@ -116,11 +124,13 @@
 					// } );
 
 				} else {
-
+				  // original code: 
 					// const mediaElement = new Audio( file );
 					// mediaElement.play();
-
+					
 					// audio.setMediaElementSource( mediaElement );
+					
+					// winner-joiner code: 
 					loadAudio();
 
 				}
@@ -129,7 +139,7 @@
 
 				uniforms = {
 
-					tAudioData: { value: new THREE.DataTexture( analyser.data, fftSize / 2, 1, format ) }
+					tAudioData: { value: new THREE.DataTexture( spectrums, fftSize / 2, 1, format ) }
 
 				};
 
@@ -168,7 +178,6 @@
 			}
 
 			function playAudio(buffer) {
-					source = audioContext.createBufferSource();
 					source.buffer = buffer;
 					source.connect(audioContext.destination);
 					
@@ -192,16 +201,17 @@
 			}
 
 			function render() {
-
-				analyser.getByteFrequencyData(
-					source.buffer
-				);
+				// winner-joiner code: 
+				if (analyser) {
+					analyser.getByteFrequencyData(spectrums);
+				};
+				//
 
 				uniforms.tAudioData.value.needsUpdate = true;
 
 				renderer.render( scene, camera );
 
-			}
+				}
 		</script>
 
 	</body>
